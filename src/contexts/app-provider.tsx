@@ -31,7 +31,7 @@ interface AppContextType {
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [isCryptoReady, setIsCryptoReady] = useState(false);
+  const isCryptoReady = isClient && typeof (window as any).CryptoJS !== 'undefined';
   const [isLocked, setIsLocked] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [masterKey, setMasterKey] = useState<string | null>(null);
@@ -39,19 +39,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [messages, setMessages] = useState<CannedMessage[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
-
-  useEffect(() => {
-    if (typeof (window as any).CryptoJS !== 'undefined') {
-      setIsCryptoReady(true);
-    } else {
-      const script = document.querySelector('script[src*="crypto-js"]');
-      const handleLoad = () => setIsCryptoReady(true);
-      if (script) {
-        script.addEventListener('load', handleLoad);
-        return () => script.removeEventListener('load', handleLoad);
-      }
-    }
-  }, []);
 
   const saveData = useCallback((key: string, data: any[]) => {
     if (!masterKey || !isClient || !isCryptoReady) return;
@@ -160,36 +147,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
   
    useEffect(() => {
-    if (!isCryptoReady || !isClient) {
+    if (!isCryptoReady) {
       setIsLoading(true);
-      return;
+      // We will retry until crypto is ready.
+      const interval = setInterval(() => {
+        if (typeof (window as any).CryptoJS !== 'undefined') {
+           clearInterval(interval);
+           // Trigger a re-render to run the effect again
+           setIsLoading(false);
+           setIsLoading(true); 
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
     
     setIsLoading(true);
     const sessionKey = sessionStorage.getItem('masterKey');
     if (sessionKey) {
-      setTimeout(() => {
-        try {
-          const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
-          const loadedMessages = loadData('messages', sessionKey) as CannedMessage[];
-          const loadedLinks = loadData('links', sessionKey) as Link[];
+        setTimeout(() => { // Simulate async operation
+            try {
+                const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
+                const loadedMessages = loadData('messages', sessionKey) as CannedMessage[];
+                const loadedLinks = loadData('links', sessionKey) as Link[];
 
-          setCredentials(loadedCredentials);
-          setMessages(loadedMessages);
-          setLinks(loadedLinks);
-          setMasterKey(sessionKey);
-          setIsLocked(false);
-        } catch (error) {
-          console.error("Session unlock failed, locking app.", error);
-          lock();
-        } finally {
-          setIsLoading(false);
-        }
-      }, 500);
+                setCredentials(loadedCredentials);
+                setMessages(loadedMessages);
+                setLinks(loadedLinks);
+                setMasterKey(sessionKey);
+                setIsLocked(false);
+            } catch (error) {
+                console.error("Session unlock failed, locking app.", error);
+                lock();
+            } finally {
+                setIsLoading(false);
+            }
+        }, 250); // Reduced delay
     } else {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   }, [isCryptoReady, loadData, lock]);
+
 
   const addCredential = (data: Omit<Credential, 'id'>) => {
     setCredentials(prev => [...prev, { ...data, id: uuidv4() }]);
@@ -245,7 +242,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addLink,
     updateLink,
     deleteLink
-  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, updateCredential, updateMessage, updateLink]);
+  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, updateCredential, updateMessage, updateLink, deleteCredential, deleteMessage, deleteLink, addCredential, addMessage, addLink]);
 
   return (
     <AppContext.Provider value={contextValue}>

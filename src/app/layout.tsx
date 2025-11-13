@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Metadata } from 'next';
@@ -29,14 +30,15 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+      </head>
+      <body className="font-body antialiased bg-background">
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"
           integrity="sha512-a+SUDuwNzXD5CoJcUjbABAiWgrDjpFRgiANfsUFAxTBqPZKpuBODh/YfnGMd/RYtcVGYxd/ziV9H2L0Asoi/sA=="
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
+          strategy="beforeInteractive"
         />
-      </head>
-      <body className="font-body antialiased bg-background">
         <AppProvider>
           {children}
         </AppProvider>
