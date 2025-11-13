@@ -7,6 +7,7 @@ import CredentialsPage from '@/components/pages/credentials-page';
 import MessagesPage from '@/components/pages/messages-page';
 import { GlobalLoader } from './global-loader';
 import { useApp } from '@/hooks/use-app';
+import { SidebarProvider } from './ui/sidebar';
 
 type Page = 'credentials' | 'messages';
 
@@ -15,16 +16,20 @@ export function MainLayout() {
   const { isLoading } = useApp();
 
   return (
-    <div className="flex h-screen bg-background">
-       {isLoading && <GlobalLoader />}
-      <AppSidebar activePage={activePage} setActivePage={setActivePage} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <AppHeader />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          {activePage === 'credentials' && <CredentialsPage />}
-          {activePage === 'messages' && <MessagesPage />}
-        </main>
+    <SidebarProvider>
+      <div className="flex h-screen bg-background">
+        {isLoading && <GlobalLoader />}
+        <AppSidebar activePage={activePage} setActivePage={setActivePage} />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <AppHeader />
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className='h-full w-full rounded-lg bg-card border p-4 md:p-6'>
+              {activePage === 'credentials' && <CredentialsPage />}
+              {activePage === 'messages' && <MessagesPage />}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

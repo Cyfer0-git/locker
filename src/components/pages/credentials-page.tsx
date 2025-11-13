@@ -25,30 +25,31 @@ export default function CredentialsPage() {
   }, [credentials, searchTerm]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto w-full h-full flex flex-col space-y-4">
       <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Credential Manager</h2>
-          <p className="text-muted-foreground text-sm">Securely store and manage your login credentials.</p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto flex-shrink-0">
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 w-full">
+         <div className="relative flex-grow w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by site name or user ID..."
+            className="w-full pl-10 bg-background"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button onClick={() => setIsAddModalOpen(true)} className="w-full md:w-auto flex-shrink-0">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add New
         </Button>
       </div>
 
-      <div className="relative flex-grow w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Search by site name or user ID..."
-          className="w-full pl-10"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid flex-1 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 content-start">
         {filteredCredentials.map(cred => (
           <CredentialCard key={cred.id} credential={cred} />
         ))}

@@ -50,7 +50,7 @@ export function MessageCard({ message }: MessageCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow rounded-lg border">
+      <Card className="flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow rounded-lg border bg-card">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <CardTitle 
@@ -60,13 +60,13 @@ export function MessageCard({ message }: MessageCardProps) {
               {message.title}
             </CardTitle>
             <div className="flex items-center">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
-                  <Pencil className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditModalOpen(true)}>
+                  <Pencil className="h-4 w-4 text-muted-foreground" />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -90,12 +90,12 @@ export function MessageCard({ message }: MessageCardProps) {
             {message.body}
           </CardDescription>
         </CardContent>
-        <CardFooter className="flex gap-2 p-4 bg-muted/50 border-t mt-4">
-          <Button variant="ghost" size="sm" className="flex-1" onClick={() => copyToClipboard(message.body, 'Message body')}>
-            <Copy className="h-4 w-4 mr-1" /> Copy
+        <CardFooter className="flex gap-2 p-2 border-t mt-4">
+          <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground" onClick={() => copyToClipboard(message.body, 'Message body')}>
+            Copy
           </Button>
-          <Button variant="ghost" size="sm" className="flex-1" onClick={() => setIsViewModalOpen(true)}>
-            <Eye className="h-4 w-4 mr-1" /> View
+          <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground" onClick={() => setIsViewModalOpen(true)}>
+            View
           </Button>
         </CardFooter>
       </Card>

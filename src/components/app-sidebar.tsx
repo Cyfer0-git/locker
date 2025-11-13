@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, MessageSquareText } from 'lucide-react';
+import { KeyRound, MessageSquareText, PanelLeft } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -9,7 +9,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from './ui/button';
 
 type Page = 'credentials' | 'messages';
 
@@ -18,11 +21,27 @@ interface AppSidebarProps {
   setActivePage: (page: Page) => void;
 }
 
+export function AppSidebarTrigger() {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="md:hidden"
+      onClick={toggleSidebar}
+    >
+      <PanelLeft />
+    </Button>
+  );
+}
+
+
 export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
   return (
-    <SidebarProvider>
-      <Sidebar side="left" className="border-r" variant="sidebar">
-        <SidebarHeader />
+      <Sidebar side="left" className="border-r" variant="sidebar" collapsible="offcanvas">
+        <SidebarHeader>
+           <h1 className="text-2xl font-bold text-primary px-2">Locker</h1>
+        </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -48,6 +67,5 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-    </SidebarProvider>
   );
 }
