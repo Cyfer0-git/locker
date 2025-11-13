@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
@@ -29,7 +30,7 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children, onCryptoReady }: { children: ReactNode, onCryptoReady: () => void }) {
+export function AppProvider({ children, isCryptoReady }: { children: ReactNode, isCryptoReady: boolean }) {
   const [isLocked, setIsLocked] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [masterKey, setMasterKey] = useState<string | null>(null);
@@ -37,13 +38,6 @@ export function AppProvider({ children, onCryptoReady }: { children: ReactNode, 
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [messages, setMessages] = useState<CannedMessage[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
-  const isCryptoReady = typeof CryptoJS !== 'undefined';
-
-  useEffect(() => {
-    if (isCryptoReady) {
-      onCryptoReady();
-    }
-  }, [isCryptoReady, onCryptoReady]);
 
   const saveData = useCallback((key: string, data: any[]) => {
     if (!masterKey || !isClient || !isCryptoReady) return;
@@ -149,13 +143,9 @@ export function AppProvider({ children, onCryptoReady }: { children: ReactNode, 
   }, []);
   
    useEffect(() => {
-    if (!isClient) return;
-
-    if (!isCryptoReady) {
+    if (!isClient || !isCryptoReady) {
       setIsLoading(true);
       return;
-    } else {
-        setIsLoading(false);
     }
     
     const sessionKey = sessionStorage.getItem('masterKey');
@@ -166,9 +156,9 @@ export function AppProvider({ children, onCryptoReady }: { children: ReactNode, 
            if (typeof CryptoJS === 'undefined') {
             throw new Error('CryptoJS library not loaded yet for session unlock.');
           }
-          const loadedCredentials = loadData('credentials', sessionKey);
-          const loadedMessages = loadData('messages', sessionKey);
-          const loadedLinks = loadData('links', sessionKey);
+          const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
+          const loadedMessages = loadData('messages', sessionKey) as CannedMessage[];
+          const loadedLinks = loadData('links', sessionKey) as Link[];
 
           setCredentials(loadedCredentials);
           setMessages(loadedMessages);
@@ -241,7 +231,7 @@ export function AppProvider({ children, onCryptoReady }: { children: ReactNode, 
     addLink,
     updateLink,
     deleteLink
-  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage, addLink, updateLink, deleteLink]);
+  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, addCredential, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage, addLink, updateLink, deleteLink]);
 
   return (
     <AppContext.Provider value={contextValue}>
