@@ -6,8 +6,7 @@ import { useApp } from '@/hooks/use-app';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Copy, Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Eye, Pencil, Trash2 } from 'lucide-react';
 import { EditItemModal } from './modals/edit-item-modal';
 import { ViewMessageModal } from './modals/view-message-modal';
 import {
@@ -51,37 +50,24 @@ export function MessageCard({ message }: MessageCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col justify-between min-h-[180px] shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader>
+      <Card className="flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow rounded-lg border">
+        <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <CardTitle 
               onClick={() => setIsViewModalOpen(true)} 
-              className="text-xl font-bold text-accent-foreground hover:underline cursor-pointer pr-2 break-all"
-              style={{ color: 'hsl(var(--accent-foreground))' }}
+              className="text-lg font-bold text-primary uppercase pr-2 break-all cursor-pointer hover:underline"
             >
               {message.title}
             </CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                  <MoreVertical className="h-4 w-4" />
+            <div className="flex items-center">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                  <Pencil className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsViewModalOpen(true)}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  <span>View/Copy</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  <span>Edit</span>
-                </DropdownMenuItem>
-                 <AlertDialog>
+                <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                      <span className="text-destructive">Delete</span>
-                    </DropdownMenuItem>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -96,20 +82,19 @@ export function MessageCard({ message }: MessageCardProps) {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent className="flex-grow pt-2">
           <CardDescription className="line-clamp-3 text-sm">
             {message.body}
           </CardDescription>
         </CardContent>
-        <CardFooter className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => copyToClipboard(message.body, 'Message body')}>
+        <CardFooter className="flex gap-2 p-4 bg-muted/50 border-t mt-4">
+          <Button variant="ghost" size="sm" className="flex-1" onClick={() => copyToClipboard(message.body, 'Message body')}>
             <Copy className="h-4 w-4 mr-1" /> Copy
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setIsViewModalOpen(true)}>
+          <Button variant="ghost" size="sm" className="flex-1" onClick={() => setIsViewModalOpen(true)}>
             <Eye className="h-4 w-4 mr-1" /> View
           </Button>
         </CardFooter>

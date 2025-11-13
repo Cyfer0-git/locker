@@ -49,63 +49,53 @@ export function CredentialCard({ credential }: CredentialCardProps) {
 
   return (
     <>
-      <Card className="flex flex-col justify-between min-h-[180px] shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader>
+      <Card className="flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow rounded-lg border">
+        <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-bold text-primary uppercase pr-2 break-all">{credential.site}</CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  <span>Edit</span>
-                </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                      <span className="text-destructive">Delete</span>
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete the credential for "{credential.site}". This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <CardTitle className="text-lg font-bold text-primary uppercase pr-2 break-all">{credential.site}</CardTitle>
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete the credential for "{credential.site}". This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
-          <CardDescription className="truncate flex items-center gap-2 pt-2">
-            <LinkIcon className="h-4 w-4 flex-shrink-0" />
-            <a href={credential.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-xs">
+        </CardHeader>
+        <CardContent className="flex-grow space-y-2 text-sm pt-2">
+          <p className="flex items-center gap-2">
+            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium break-all">{credential.user}</span>
+          </p>
+          <p className="flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <a href={credential.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-xs break-all">
               {credential.url}
             </a>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-          <p className="text-sm flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{credential.user}</span>
           </p>
         </CardContent>
-        <CardFooter className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => copyToClipboard(credential.user, 'Username')}>
-            <User className="h-4 w-4 mr-1" /> Copy User
+        <CardFooter className="flex gap-2 p-4 bg-muted/50 border-t mt-4">
+          <Button variant="ghost" size="sm" className="flex-1" onClick={() => copyToClipboard(credential.user, 'Username')}>
+            <Copy className="h-4 w-4 mr-1" /> Copy User
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => copyToClipboard(credential.pass, 'Password')}>
+          <Button variant="ghost" size="sm" className="flex-1" onClick={() => copyToClipboard(credential.pass, 'Password')}>
             <KeyRound className="h-4 w-4 mr-1" /> Copy Pass
           </Button>
         </CardFooter>
