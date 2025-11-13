@@ -92,6 +92,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Give crypto-js time to load
       setTimeout(() => {
         try {
+          if (typeof CryptoJS === 'undefined') {
+            throw new Error('CryptoJS library not loaded yet.');
+          }
           const derivedKey = deriveKey(password);
           const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
           const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
@@ -111,7 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
           resolve(false);
         }
-      }, 100); // Small delay to ensure script has loaded
+      }, 500); // Increased delay slightly to be safer
     });
   }, [loadData]);
 
@@ -138,6 +141,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try {
           // Use a small timeout to ensure cryptoJS is available
           setTimeout(() => {
+             if (typeof CryptoJS === 'undefined') {
+              throw new Error('CryptoJS library not loaded yet for session unlock.');
+            }
             const loadedCredentials = loadData('credentials', sessionKey);
             const loadedMessages = loadData('messages', sessionKey);
             setCredentials(loadedCredentials);
@@ -145,7 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setMasterKey(sessionKey);
             setIsLocked(false);
             setIsLoading(false);
-          }, 100);
+          }, 500);
         } catch (error) {
           console.error("Session unlock failed, locking app.", error);
           lock();
@@ -194,7 +200,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addMessage,
     updateMessage,
     deleteMessage,
-  }), [isLocked, isLoading, credentials, messages, unlock, lock, addCredential, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage]);
+  }), [isLocked, isLoading, credentials, messages, unlock, lock]);
 
   return (
     <AppContext.Provider value={contextValue}>

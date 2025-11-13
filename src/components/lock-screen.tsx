@@ -40,7 +40,6 @@ export function LockScreen() {
       form.setError('password', { type: 'manual', message: 'Incorrect password.' });
       setIsUnlocking(false);
     }
-    // No need to set isUnlocking to false on success, as the component will unmount
   }
 
   return (
@@ -50,7 +49,7 @@ export function LockScreen() {
           <div className="mx-auto bg-primary/10 text-primary p-3 rounded-full w-fit mb-4">
             <LockKeyhole className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">Secure Manager</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Locker</CardTitle>
           <CardDescription>Enter your Master Password to unlock your data vault.</CardDescription>
         </CardHeader>
         <CardContent>
