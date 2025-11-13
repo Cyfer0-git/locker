@@ -163,7 +163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     const sessionKey = sessionStorage.getItem('masterKey');
     if (sessionKey) {
-      setIsLoading(true);
+      // Don't set isLoading(true) here, let unlock handle it.
       setTimeout(() => {
         try {
            if (typeof (window as any).CryptoJS === 'undefined') {
@@ -182,7 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           console.error("Session unlock failed, locking app.", error);
           lock();
         } finally {
-          setIsLoading(false);
+          setIsLoading(false); // This should be the final step
         }
       }, 500);
     } else {
@@ -244,7 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addLink,
     updateLink,
     deleteLink
-  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock]);
+  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, updateCredential, updateMessage, updateLink]);
 
   return (
     <AppContext.Provider value={contextValue}>
