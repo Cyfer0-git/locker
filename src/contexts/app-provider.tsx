@@ -91,6 +91,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadData = useCallback((key: string, decryptionKey: string) => {
     if (!isClient || !isCryptoReady) return [];
+    if (typeof (window as any).CryptoJS === 'undefined') {
+      throw new Error('CryptoJS library not ready.');
+    }
     const storedData = localStorage.getItem(key);
     if (storedData) {
       try {
@@ -118,7 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return new Promise((resolve) => {
         setTimeout(() => {
           try {
-            if (!isCryptoReady || typeof (window as any).CryptoJS === 'undefined') {
+            if (!isCryptoReady) {
               throw new Error('CryptoJS library not ready.');
             }
             const derivedKey = deriveKey(password);
@@ -132,15 +135,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setMasterKey(derivedKey);
             if (isClient) sessionStorage.setItem('masterKey', derivedKey);
             setIsLocked(false);
+            setIsLoading(false);
             resolve(true);
           } catch (error) {
             console.error('Unlock failed:', error);
             setMasterKey(null);
             setIsLocked(true);
             if (isClient) sessionStorage.removeItem('masterKey');
-            resolve(false);
-          } finally {
             setIsLoading(false);
+            resolve(false);
           }
         }, 500);
       });
@@ -158,17 +161,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
    useEffect(() => {
     if (!isCryptoReady || !isClient) {
+      setIsLoading(true);
       return;
     }
     
+    setIsLoading(true);
     const sessionKey = sessionStorage.getItem('masterKey');
     if (sessionKey) {
-      // Don't set isLoading(true) here, let unlock handle it.
       setTimeout(() => {
         try {
-           if (typeof (window as any).CryptoJS === 'undefined') {
-            throw new Error('CryptoJS library not loaded yet for session unlock.');
-          }
           const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
           const loadedMessages = loadData('messages', sessionKey) as CannedMessage[];
           const loadedLinks = loadData('links', sessionKey) as Link[];
@@ -182,13 +183,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           console.error("Session unlock failed, locking app.", error);
           lock();
         } finally {
-          setIsLoading(false); // This should be the final step
+          setIsLoading(false);
         }
       }, 500);
     } else {
       setIsLoading(false);
     }
-  }, [lock, loadData, isCryptoReady]);
+  }, [isCryptoReady, loadData, lock]);
 
   const addCredential = (data: Omit<Credential, 'id'>) => {
     setCredentials(prev => [...prev, { ...data, id: uuidv4() }]);
