@@ -30,7 +30,8 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children, isCryptoReady }: { children: ReactNode, isCryptoReady: boolean }) {
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [isCryptoReady, setIsCryptoReady] = useState(false);
   const [isLocked, setIsLocked] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [masterKey, setMasterKey] = useState<string | null>(null);
@@ -38,6 +39,19 @@ export function AppProvider({ children, isCryptoReady }: { children: ReactNode, 
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [messages, setMessages] = useState<CannedMessage[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
+
+  useEffect(() => {
+    if (typeof (window as any).CryptoJS !== 'undefined') {
+      setIsCryptoReady(true);
+    } else {
+      const script = document.querySelector('script[src*="crypto-js"]');
+      const handleLoad = () => setIsCryptoReady(true);
+      if (script) {
+        script.addEventListener('load', handleLoad);
+        return () => script.removeEventListener('load', handleLoad);
+      }
+    }
+  }, []);
 
   const saveData = useCallback((key: string, data: any[]) => {
     if (!masterKey || !isClient || !isCryptoReady) return;
@@ -104,7 +118,7 @@ export function AppProvider({ children, isCryptoReady }: { children: ReactNode, 
       return new Promise((resolve) => {
         setTimeout(() => {
           try {
-             if (!isCryptoReady || typeof CryptoJS === 'undefined') {
+            if (!isCryptoReady || typeof (window as any).CryptoJS === 'undefined') {
               throw new Error('CryptoJS library not ready.');
             }
             const derivedKey = deriveKey(password);
@@ -143,8 +157,7 @@ export function AppProvider({ children, isCryptoReady }: { children: ReactNode, 
   }, []);
   
    useEffect(() => {
-    if (!isClient || !isCryptoReady) {
-      setIsLoading(true);
+    if (!isCryptoReady || !isClient) {
       return;
     }
     
@@ -153,7 +166,7 @@ export function AppProvider({ children, isCryptoReady }: { children: ReactNode, 
       setIsLoading(true);
       setTimeout(() => {
         try {
-           if (typeof CryptoJS === 'undefined') {
+           if (typeof (window as any).CryptoJS === 'undefined') {
             throw new Error('CryptoJS library not loaded yet for session unlock.');
           }
           const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
@@ -231,7 +244,7 @@ export function AppProvider({ children, isCryptoReady }: { children: ReactNode, 
     addLink,
     updateLink,
     deleteLink
-  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, addCredential, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage, addLink, updateLink, deleteLink]);
+  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock]);
 
   return (
     <AppContext.Provider value={contextValue}>

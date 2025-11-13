@@ -6,7 +6,6 @@ import './globals.css';
 import { AppProvider } from '@/contexts/app-provider';
 import { Toaster } from '@/components/ui/toaster';
 import Script from 'next/script';
-import { useState } from 'react';
 
 // export const metadata: Metadata = {
 //   title: 'Locker',
@@ -18,7 +17,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isCryptoReady, setIsCryptoReady] = useState(false);
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -36,11 +34,10 @@ export default function RootLayout({
           integrity="sha512-a+SUDuwNzXD5CoJcUjbABAiWgrDjpFRgiANfsUFAxTBqPZKpuBODh/YfnGMd/RYtcVGYxd/ziV9H2L0Asoi/sA=="
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
-          onLoad={() => setIsCryptoReady(true)}
         />
       </head>
       <body className="font-body antialiased bg-background">
-        <AppProvider isCryptoReady={isCryptoReady}>
+        <AppProvider>
           {children}
         </AppProvider>
         <Toaster />
