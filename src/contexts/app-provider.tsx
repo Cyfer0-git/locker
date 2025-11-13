@@ -63,7 +63,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [messages, masterKey, saveData]);
 
-  const loadData = useCallback((key: string) => {
+  const loadData = useCallback((key: string, decryptionKey: string) => {
     if (!isClient) return [];
     const storedData = localStorage.getItem(key);
     if (storedData) {
@@ -73,7 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const decryptedItem: { [key: string]: any } = { id: item.id };
           Object.keys(item).forEach(prop => {
             if (prop !== 'id') {
-              decryptedItem[prop] = decrypt(item[prop], key);
+              decryptedItem[prop] = decrypt(item[prop], decryptionKey);
             }
           });
           return decryptedItem;
@@ -187,7 +187,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addMessage,
     updateMessage,
     deleteMessage,
-  }), [isLocked, isLoading, credentials, messages, unlock, lock]);
+  }), [isLocked, isLoading, credentials, messages, unlock, lock, addCredential, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage]);
 
   return (
     <AppContext.Provider value={contextValue}>
