@@ -69,6 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (storedData) {
       try {
         const encryptedItems = JSON.parse(storedData);
+        if (!Array.isArray(encryptedItems)) return [];
         return encryptedItems.map((item: any) => {
           const decryptedItem: { [key: string]: any } = { id: item.id };
           Object.keys(item).forEach(prop => {
@@ -87,35 +88,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const unlock = useCallback(async (password: string): Promise<boolean> => {
-    return new Promise((resolve) => {
       setIsLoading(true);
-      // Give crypto-js time to load
-      setTimeout(() => {
-        try {
-          if (typeof CryptoJS === 'undefined') {
-            throw new Error('CryptoJS library not loaded yet.');
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          try {
+            if (typeof CryptoJS === 'undefined') {
+              throw new Error('CryptoJS library not loaded yet.');
+            }
+            const derivedKey = deriveKey(password);
+            const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
+            const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
+            
+            setCredentials(loadedCredentials);
+            setMessages(loadedMessages);
+            setMasterKey(derivedKey);
+            if (isClient) sessionStorage.setItem('masterKey', derivedKey);
+            setIsLocked(false);
+            resolve(true);
+          } catch (error) {
+            console.error('Unlock failed:', error);
+            setMasterKey(null);
+            setIsLocked(true);
+            if (isClient) sessionStorage.removeItem('masterKey');
+            resolve(false);
+          } finally {
+            setIsLoading(false);
           }
-          const derivedKey = deriveKey(password);
-          const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
-          const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
-          
-          setCredentials(loadedCredentials);
-          setMessages(loadedMessages);
-          setMasterKey(derivedKey);
-          if (isClient) sessionStorage.setItem('masterKey', derivedKey);
-          setIsLocked(false);
-          setIsLoading(false);
-          resolve(true);
-        } catch (error) {
-          console.error('Unlock failed:', error);
-          setMasterKey(null);
-          setIsLocked(true);
-          if (isClient) sessionStorage.removeItem('masterKey');
-          setIsLoading(false);
-          resolve(false);
-        }
-      }, 500); // Increased delay slightly to be safer
-    });
+        }, 500);
+      });
   }, [loadData]);
 
 
@@ -135,29 +135,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     const sessionKey = sessionStorage.getItem('masterKey');
     if (sessionKey) {
-      // "Unlock" using the session key without needing the password again
-      (async () => {
-        setIsLoading(true);
+      setIsLoading(true);
+      setTimeout(() => {
         try {
-          // Use a small timeout to ensure cryptoJS is available
-          setTimeout(() => {
-             if (typeof CryptoJS === 'undefined') {
-              throw new Error('CryptoJS library not loaded yet for session unlock.');
-            }
-            const loadedCredentials = loadData('credentials', sessionKey);
-            const loadedMessages = loadData('messages', sessionKey);
-            setCredentials(loadedCredentials);
-            setMessages(loadedMessages);
-            setMasterKey(sessionKey);
-            setIsLocked(false);
-            setIsLoading(false);
-          }, 500);
+           if (typeof CryptoJS === 'undefined') {
+            throw new Error('CryptoJS library not loaded yet for session unlock.');
+          }
+          const loadedCredentials = loadData('credentials', sessionKey);
+          const loadedMessages = loadData('messages', sessionKey);
+          setCredentials(loadedCredentials);
+          setMessages(loadedMessages);
+          setMasterKey(sessionKey);
+          setIsLocked(false);
         } catch (error) {
           console.error("Session unlock failed, locking app.", error);
           lock();
+        } finally {
           setIsLoading(false);
         }
-      })();
+      }, 500);
     } else {
       setIsLoading(false);
     }
@@ -200,7 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addMessage,
     updateMessage,
     deleteMessage,
-  }), [isLocked, isLoading, credentials, messages, unlock, lock]);
+  }), [isLocked, isLoading, credentials, messages, unlock, lock, updateCredential, deleteCredential, addMessage, updateMessage, deleteMessage]);
 
   return (
     <AppContext.Provider value={contextValue}>
