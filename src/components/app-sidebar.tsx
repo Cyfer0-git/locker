@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, MessageSquareText, PanelLeft } from 'lucide-react';
+import { KeyRound, MessageSquareText, PanelLeft, Link } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 
-type Page = 'credentials' | 'messages';
+type Page = 'credentials' | 'messages' | 'links';
 
 interface AppSidebarProps {
   activePage: Page;
@@ -62,6 +62,16 @@ export function AppSidebar({ activePage, setActivePage }: AppSidebarProps) {
               >
                 <MessageSquareText />
                 <span>Messages</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActivePage('links')}
+                isActive={activePage === 'links'}
+                tooltip={{ children: 'Links', side: 'right' }}
+              >
+                <Link />
+                <span>Links</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

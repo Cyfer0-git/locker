@@ -25,3 +25,15 @@ export interface EncryptedCannedMessage {
   title: string; // encrypted
   body: string; // encrypted
 }
+
+export interface Link {
+  id: string;
+  name: string;
+  url: string;
+}
+
+export interface EncryptedLink {
+  id: string;
+  name: string; // encrypted
+  url: string; // encrypted
+}
