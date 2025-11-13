@@ -4,8 +4,8 @@ import React, { createContext, useState, useEffect, useCallback, ReactNode, useM
 import { Credential, CannedMessage } from '@/lib/types';
 import { deriveKey, encrypt, decrypt } from '@/lib/encryption';
 import { v4 as uuidv4 } from 'uuid';
+import Script from 'next/script';
 
-// Helper to check if running on the client
 const isClient = typeof window !== 'undefined';
 
 interface AppContextType {
@@ -29,6 +29,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLocked, setIsLocked] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [masterKey, setMasterKey] = useState<string | null>(null);
+  const [isCryptoReady, setIsCryptoReady] = useState(false);
 
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [messages, setMessages] = useState<CannedMessage[]>([]);
@@ -81,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       } catch (error) {
         console.error('Failed to load or decrypt data. Wrong password?', error);
-        throw error; // Propagate error to be caught by unlock function
+        throw error;
       }
     }
     return [];
@@ -92,8 +93,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return new Promise((resolve) => {
         setTimeout(() => {
           try {
-            if (typeof CryptoJS === 'undefined') {
-              throw new Error('CryptoJS library not loaded yet.');
+             if (!isCryptoReady || typeof CryptoJS === 'undefined') {
+              throw new Error('CryptoJS library not ready.');
             }
             const derivedKey = deriveKey(password);
             const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
@@ -116,7 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }, 500);
       });
-  }, [loadData]);
+  }, [loadData, isCryptoReady]);
 
 
   const lock = useCallback(() => {
@@ -127,10 +128,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (isClient) sessionStorage.removeItem('masterKey');
   }, []);
   
-  // Check session on initial load
   useEffect(() => {
-    if (!isClient) {
-      setIsLoading(false);
+    if (!isClient || !isCryptoReady) {
+      if (!isCryptoReady) {
+        setIsLoading(true);
+      } else {
+        setIsLoading(false);
+      }
       return;
     }
     const sessionKey = sessionStorage.getItem('masterKey');
@@ -157,7 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else {
       setIsLoading(false);
     }
-  }, [lock, loadData]);
+  }, [lock, loadData, isCryptoReady]);
 
   const addCredential = (data: Omit<Credential, 'id'>) => {
     setCredentials(prev => [...prev, { ...data, id: uuidv4() }]);
@@ -200,6 +204,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={contextValue}>
+       <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" 
+        strategy="lazyOnload"
+        onLoad={() => setIsCryptoReady(true)}
+      />
       {children}
     </AppContext.Provider>
   );
