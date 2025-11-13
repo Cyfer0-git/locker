@@ -38,8 +38,9 @@ export function LockScreen() {
         description: 'The master password may be incorrect or your data is corrupt. Please try again.',
       });
       form.setError('password', { type: 'manual', message: 'Incorrect password.' });
+      setIsUnlocking(false);
     }
-    setIsUnlocking(false);
+    // No need to set isUnlocking to false on success, as the component will unmount
   }
 
   return (

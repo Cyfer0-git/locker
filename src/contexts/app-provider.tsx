@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
-import { Credential, CannedMessage, EncryptedCredential, EncryptedCannedMessage } from '@/lib/types';
+import { Credential, CannedMessage } from '@/lib/types';
 import { deriveKey, encrypt, decrypt } from '@/lib/encryption';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -87,30 +87,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const unlock = useCallback(async (password: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const derivedKey = deriveKey(password);
-      // Test decryption on a small piece of data if possible, or just proceed
-      const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
-      const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
-      
-      setCredentials(loadedCredentials);
-      setMessages(loadedMessages);
-      setMasterKey(derivedKey);
-      setIsLocked(false);
-      if (isClient) sessionStorage.setItem('masterKey', derivedKey);
-      return true;
-    } catch (error) {
-      console.error('Unlock failed:', error);
-      // Ensure app remains locked on failure
-      setMasterKey(null);
-      setIsLocked(true);
-      if (isClient) sessionStorage.removeItem('masterKey');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
+    return new Promise((resolve) => {
+      setIsLoading(true);
+      // Give crypto-js time to load
+      setTimeout(() => {
+        try {
+          const derivedKey = deriveKey(password);
+          const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
+          const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
+          
+          setCredentials(loadedCredentials);
+          setMessages(loadedMessages);
+          setMasterKey(derivedKey);
+          if (isClient) sessionStorage.setItem('masterKey', derivedKey);
+          setIsLocked(false);
+          setIsLoading(false);
+          resolve(true);
+        } catch (error) {
+          console.error('Unlock failed:', error);
+          setMasterKey(null);
+          setIsLocked(true);
+          if (isClient) sessionStorage.removeItem('masterKey');
+          setIsLoading(false);
+          resolve(false);
+        }
+      }, 100); // Small delay to ensure script has loaded
+    });
   }, [loadData]);
+
 
   const lock = useCallback(() => {
     setMasterKey(null);
@@ -132,16 +136,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       (async () => {
         setIsLoading(true);
         try {
-          const loadedCredentials = loadData('credentials', sessionKey);
-          const loadedMessages = loadData('messages', sessionKey);
-          setCredentials(loadedCredentials);
-          setMessages(loadedMessages);
-          setMasterKey(sessionKey);
-          setIsLocked(false);
+          // Use a small timeout to ensure cryptoJS is available
+          setTimeout(() => {
+            const loadedCredentials = loadData('credentials', sessionKey);
+            const loadedMessages = loadData('messages', sessionKey);
+            setCredentials(loadedCredentials);
+            setMessages(loadedMessages);
+            setMasterKey(sessionKey);
+            setIsLocked(false);
+            setIsLoading(false);
+          }, 100);
         } catch (error) {
           console.error("Session unlock failed, locking app.", error);
           lock();
-        } finally {
           setIsLoading(false);
         }
       })();
@@ -192,7 +199,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={contextValue}>
       {children}
-      {isLoading && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50" />}
     </AppContext.Provider>
   );
 }
