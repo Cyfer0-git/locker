@@ -34,23 +34,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<CannedMessage[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
 
-  const addCredential = (data: Omit<Credential, 'id'>) => {
-    const newCredential = { ...data, id: uuidv4() };
-    setCredentials(prev => [...prev, newCredential]);
-  };
-
-  const updateCredential = (id: string, data: Partial<Omit<Credential, 'id'>>) => {
-    setCredentials(prev => prev.map(c => c.id === id ? { ...c, ...data } as Credential : c));
-  };
-
-  const deleteCredential = (id: string) => {
-    setCredentials(prev => prev.filter(c => c.id !== id));
-  };
+  // add helper inside AppProvider (near other helpers/state)
+  async function sendToSheets(type: 'message' | 'credential' | 'link', data: any) {
+    try {
+        await fetch('/api/sheets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, data }),
+        })
+    } catch (err) {
+        console.error('sheets error', err)
+    }
+  }
 
   const addMessage = (data: Omit<CannedMessage, 'id'>) => {
-    const newMessage = { ...data, id: uuidv4() };
-    setMessages(prev => [...prev, newMessage]);
-  };
+    const newMessage = { ...data, id: uuidv4() }
+    setMessages(prev => [...prev, newMessage])
+    void sendToSheets('message', newMessage)
+  }
 
   const updateMessage = (id: string, data: Partial<Omit<CannedMessage, 'id'>>) => {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, ...data } as CannedMessage : m));
@@ -60,10 +61,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMessages(prev => prev.filter(m => m.id !== id));
   };
 
-  const addLink = (data: Omit<Link, 'id'>) => {
-    const newLink = { ...data, id: uuidv4() };
-    setLinks(prev => [...prev, newLink]);
+  const addCredential = (data: Omit<Credential, 'id'>) => {
+    const newCredential = { ...data, id: uuidv4() }
+    setCredentials(prev => [...prev, newCredential])
+    void sendToSheets('credential', newCredential)
+  }
+
+  const updateCredential = (id: string, data: Partial<Omit<Credential, 'id'>>) => {
+    setCredentials(prev => prev.map(c => c.id === id ? { ...c, ...data } as Credential : c));
   };
+
+  const deleteCredential = (id: string) => {
+    setCredentials(prev => prev.filter(c => c.id !== id));
+  };
+
+  const addLink = (data: Omit<Link, 'id'>) => {
+    const newLink = { ...data, id: uuidv4() }
+    setLinks(prev => [...prev, newLink])
+    void sendToSheets('link', newLink)
+  }
 
   const updateLink = (id: string, data: Partial<Omit<Link, 'id'>>) => {
     setLinks(prev => prev.map(l => l.id === id ? { ...l, ...data } as Link : l));
