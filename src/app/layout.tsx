@@ -1,16 +1,8 @@
-
 'use client';
 
-import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '@/contexts/app-provider';
 import { Toaster } from '@/components/ui/toaster';
-import Script from 'next/script';
-
-// export const metadata: Metadata = {
-//   title: 'Locker',
-//   description: 'Securely manage your credentials and messages.',
-// };
 
 export default function RootLayout({
   children,
@@ -37,13 +29,6 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased bg-background">
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"
-          integrity="sha512-a+SUDuwNzXD5CoJcUjbABAiWgrDjpFRgiANfsUFAxTBqPZKpuBODh/YfnGMd/RYtcVGYxd/ziV9H2L0Asoi/sA=="
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-          strategy="beforeInteractive"
-        />
         <AppProvider>
           {children}
         </AppProvider>

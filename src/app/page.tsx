@@ -1,12 +1,12 @@
 'use client';
 
 import { useApp } from '@/hooks/use-app';
-import { LockScreen } from '@/components/lock-screen';
+import { AuthPage } from '@/components/auth-page';
 import { MainLayout } from '@/components/main-layout';
 import { GlobalLoader } from '@/components/global-loader';
 
 export default function Home() {
-  const { isLocked, isLoading } = useApp();
+  const { user, isLoading } = useApp();
 
   if (isLoading) {
     return <GlobalLoader message="Initializing..." />;
@@ -14,7 +14,7 @@ export default function Home() {
 
   return (
     <>
-      {isLocked ? <LockScreen /> : <MainLayout />}
+      {!user ? <AuthPage /> : <MainLayout />}
     </>
   );
 }

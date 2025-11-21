@@ -14,10 +14,10 @@ type Page = 'credentials' | 'messages' | 'links';
 
 export function MainLayout() {
   const [activePage, setActivePage] = useState<Page>('credentials');
-  const { isLoading, isCryptoReady } = useApp();
+  const { isLoading, user } = useApp();
 
-  if (isLoading || !isCryptoReady) {
-    return <GlobalLoader message="Initializing..." />;
+  if (isLoading && !user) {
+    return <GlobalLoader message="Loading..." />;
   }
   
   return (

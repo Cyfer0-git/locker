@@ -57,14 +57,14 @@ export function EditItemModal({ isOpen, onOpenChange, itemType, item }: EditItem
   });
 
   useEffect(() => {
-    if (item) {
+    if (item && isOpen) {
         if (itemType === 'credential') {
             const cred = item as Credential;
             form.reset({
                 site: cred.site,
                 url: cred.url,
                 user: cred.user,
-                pass: '',
+                pass: '', // Always clear password field for security
             });
         } else if (itemType === 'message') {
             const msg = item as CannedMessage;
@@ -86,20 +86,22 @@ export function EditItemModal({ isOpen, onOpenChange, itemType, item }: EditItem
   async function onSubmit(values: any) {
     setIsSubmitting(true);
     if (itemType === 'credential') {
-      const oldCred = item as Credential;
-      const newCredData = {
-        site: values.site,
-        url: values.url,
-        user: values.user,
-        pass: values.pass ? values.pass : oldCred.pass,
+      const cred = item as Credential;
+      const dataToUpdate: Partial<Credential> = {
+          site: values.site,
+          url: values.url,
+          user: values.user,
       };
-      updateCredential(item.id, newCredData);
+      if (values.pass) {
+          dataToUpdate.pass = values.pass;
+      }
+      await updateCredential(cred.id, dataToUpdate);
       toast({ title: 'Credential Updated', description: `"${values.site}" has been updated.` });
     } else if (itemType === 'message') {
-      updateMessage(item.id, values);
+      await updateMessage(item.id, values);
       toast({ title: 'Message Updated', description: `"${values.title}" has been updated.` });
     } else if (itemType === 'link') {
-      updateLink(item.id, values);
+      await updateLink(item.id, values);
       toast({ title: 'Link Updated', description: `"${values.name}" has been updated.` });
     }
     setIsSubmitting(false);
