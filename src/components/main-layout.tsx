@@ -14,9 +14,9 @@ type Page = 'credentials' | 'messages' | 'links';
 
 export function MainLayout() {
   const [activePage, setActivePage] = useState<Page>('credentials');
-  const { isLoading, user } = useApp();
+  const { isLoading } = useApp();
 
-  if (isLoading && !user) {
+  if (isLoading) {
     return <GlobalLoader message="Loading..." />;
   }
   
