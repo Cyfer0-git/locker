@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type { Metadata } from 'next';
@@ -18,14 +17,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Locker</title>
-        <meta name="description" content="Securely manage your credentials and messages." />
+        <meta
+          name="description"
+          content="Securely manage your credentials and messages."
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"

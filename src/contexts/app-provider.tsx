@@ -1,7 +1,14 @@
 
 'use client';
 
-import React, { createContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+  useMemo,
+} from 'react';
 import { Credential, CannedMessage, Link } from '@/lib/types';
 import { deriveKey, encrypt, decrypt } from '@/lib/encryption';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +28,7 @@ interface AppContextType {
   updateCredential: (id: string, data: Omit<Credential, 'id'>) => void;
   deleteCredential: (id: string) => void;
   addMessage: (data: Omit<CannedMessage, 'id'>) => void;
-  updateMessage: (id:string, data: Omit<CannedMessage, 'id'>) => void;
+  updateMessage: (id: string, data: Omit<CannedMessage, 'id'>) => void;
   deleteMessage: (id: string) => void;
   addLink: (data: Omit<Link, 'id'>) => void;
   updateLink: (id: string, data: Omit<Link, 'id'>) => void;
@@ -31,32 +38,78 @@ interface AppContextType {
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const isCryptoReady = isClient && typeof (window as any).CryptoJS !== 'undefined';
   const [isLocked, setIsLocked] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCryptoReady, setIsCryptoReady] = useState(false);
   const [masterKey, setMasterKey] = useState<string | null>(null);
-  
+
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [messages, setMessages] = useState<CannedMessage[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
 
-  const saveData = useCallback((key: string, data: any[]) => {
-    if (!masterKey || !isClient || !isCryptoReady) return;
-    try {
-      const encryptedData = data.map(item => {
-        const encryptedItem: { [key: string]: any } = { id: item.id };
-        Object.keys(item).forEach(prop => {
-          if (prop !== 'id') {
-            encryptedItem[prop] = encrypt(item[prop], masterKey);
+  useEffect(() => {
+    // This effect runs only once to check for CryptoJS and attempt session unlock.
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      const cryptoLoaded = isClient && typeof (window as any).CryptoJS !== 'undefined';
+
+      if (cryptoLoaded) {
+        clearInterval(interval);
+        setIsCryptoReady(true);
+        const sessionKey = sessionStorage.getItem('masterKey');
+        if (sessionKey) {
+          try {
+            const loadedCredentials = loadData('credentials', sessionKey, true);
+            const loadedMessages = loadData('messages', sessionKey, true);
+            const loadedLinks = loadData('links', sessionKey, true);
+
+            setCredentials(loadedCredentials as Credential[]);
+            setMessages(loadedMessages as CannedMessage[]);
+            setLinks(loadedLinks as Link[]);
+            setMasterKey(sessionKey);
+            setIsLocked(false);
+          } catch (error) {
+            console.error('Session unlock failed, locking app.', error);
+            lock();
+          } finally {
+            setIsLoading(false);
           }
+        } else {
+          setIsLoading(false);
+        }
+      } else if (attempts > 50) { // Timeout after ~5 seconds
+        clearInterval(interval);
+        console.error("CryptoJS failed to load.");
+        setIsLoading(false); // Stop loading to show an error or the lock screen
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+  const saveData = useCallback(
+    (key: string, data: any[]) => {
+      if (!masterKey || !isClient || !isCryptoReady) return;
+      try {
+        const encryptedData = data.map((item) => {
+          const encryptedItem: { [key: string]: any } = { id: item.id };
+          Object.keys(item).forEach((prop) => {
+            if (prop !== 'id') {
+              encryptedItem[prop] = encrypt(item[prop], masterKey);
+            }
+          });
+          return encryptedItem;
         });
-        return encryptedItem;
-      });
-      localStorage.setItem(key, JSON.stringify(encryptedData));
-    } catch (error) {
-      console.error(`Failed to save ${key}:`, error);
-    }
-  }, [masterKey, isCryptoReady]);
+        localStorage.setItem(key, JSON.stringify(encryptedData));
+      } catch (error) {
+        console.error(`Failed to save ${key}:`, error);
+      }
+    },
+    [masterKey, isCryptoReady]
+  );
 
   useEffect(() => {
     if (masterKey) {
@@ -69,17 +122,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saveData('messages', messages);
     }
   }, [messages, masterKey, saveData]);
-  
+
   useEffect(() => {
     if (masterKey) {
       saveData('links', links);
     }
   }, [links, masterKey, saveData]);
 
-  const loadData = useCallback((key: string, decryptionKey: string) => {
-    if (!isClient || !isCryptoReady) return [];
-    if (typeof (window as any).CryptoJS === 'undefined') {
-      throw new Error('CryptoJS library not ready.');
+  const loadData = useCallback((key: string, decryptionKey: string, cryptoMustBeReady: boolean = false) => {
+    if (!isClient) return [];
+    if (cryptoMustBeReady && (typeof (window as any).CryptoJS === 'undefined')) {
+      throw new Error(`CryptoJS library not ready for key: ${key}`);
     }
     const storedData = localStorage.getItem(key);
     if (storedData) {
@@ -88,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!Array.isArray(encryptedItems)) return [];
         return encryptedItems.map((item: any) => {
           const decryptedItem: { [key: string]: any } = { id: item.id };
-          Object.keys(item).forEach(prop => {
+          Object.keys(item).forEach((prop) => {
             if (prop !== 'id') {
               decryptedItem[prop] = decrypt(item[prop], decryptionKey);
             }
@@ -101,21 +154,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     return [];
-  }, [isCryptoReady]);
+  }, []);
 
-  const unlock = useCallback(async (password: string): Promise<boolean> => {
+  const unlock = useCallback(
+    async (password: string): Promise<boolean> => {
+      if (!isCryptoReady) {
+        console.error('Unlock failed: CryptoJS not ready.');
+        return false;
+      }
       setIsLoading(true);
       return new Promise((resolve) => {
         setTimeout(() => {
           try {
-            if (!isCryptoReady) {
-              throw new Error('CryptoJS library not ready.');
-            }
             const derivedKey = deriveKey(password);
             const loadedCredentials = loadData('credentials', derivedKey) as Credential[];
             const loadedMessages = loadData('messages', derivedKey) as CannedMessage[];
             const loadedLinks = loadData('links', derivedKey) as Link[];
-            
+
             setCredentials(loadedCredentials);
             setMessages(loadedMessages);
             setLinks(loadedLinks);
@@ -134,8 +189,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }, 500);
       });
-  }, [loadData, isCryptoReady]);
-
+    },
+    [loadData, isCryptoReady]
+  );
 
   const lock = useCallback(() => {
     setMasterKey(null);
@@ -145,108 +201,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLinks([]);
     if (isClient) sessionStorage.removeItem('masterKey');
   }, []);
-  
-   useEffect(() => {
-    if (!isCryptoReady) {
-      setIsLoading(true);
-      // We will retry until crypto is ready.
-      const interval = setInterval(() => {
-        if (typeof (window as any).CryptoJS !== 'undefined') {
-           clearInterval(interval);
-           // Trigger a re-render to run the effect again
-           setIsLoading(false);
-           setIsLoading(true); 
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-    
-    setIsLoading(true);
-    const sessionKey = sessionStorage.getItem('masterKey');
-    if (sessionKey) {
-        setTimeout(() => { // Simulate async operation
-            try {
-                const loadedCredentials = loadData('credentials', sessionKey) as Credential[];
-                const loadedMessages = loadData('messages', sessionKey) as CannedMessage[];
-                const loadedLinks = loadData('links', sessionKey) as Link[];
-
-                setCredentials(loadedCredentials);
-                setMessages(loadedMessages);
-                setLinks(loadedLinks);
-                setMasterKey(sessionKey);
-                setIsLocked(false);
-            } catch (error) {
-                console.error("Session unlock failed, locking app.", error);
-                lock();
-            } finally {
-                setIsLoading(false);
-            }
-        }, 250); // Reduced delay
-    } else {
-        setIsLoading(false);
-    }
-  }, [isCryptoReady, loadData, lock]);
-
 
   const addCredential = (data: Omit<Credential, 'id'>) => {
-    setCredentials(prev => [...prev, { ...data, id: uuidv4() }]);
+    setCredentials((prev) => [...prev, { ...data, id: uuidv4() }]);
   };
 
   const updateCredential = (id: string, data: Omit<Credential, 'id'>) => {
-    setCredentials(prev => prev.map(c => (c.id === id ? { ...data, id } : c)));
+    setCredentials((prev) => prev.map((c) => (c.id === id ? { ...data, id } : c)));
   };
 
   const deleteCredential = (id: string) => {
-    setCredentials(prev => prev.filter(c => c.id !== id));
+    setCredentials((prev) => prev.filter((c) => c.id !== id));
   };
 
   const addMessage = (data: Omit<CannedMessage, 'id'>) => {
-    setMessages(prev => [...prev, { ...data, id: uuidv4() }]);
+    setMessages((prev) => [...prev, { ...data, id: uuidv4() }]);
   };
 
   const updateMessage = (id: string, data: Omit<CannedMessage, 'id'>) => {
-    setMessages(prev => prev.map(m => (m.id === id ? { ...data, id } : m)));
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...data, id } : m)));
   };
 
   const deleteMessage = (id: string) => {
-    setMessages(prev => prev.filter(m => m.id !== id));
+    setMessages((prev) => prev.filter((m) => m.id !== id));
   };
 
   const addLink = (data: Omit<Link, 'id'>) => {
-    setLinks(prev => [...prev, { ...data, id: uuidv4() }]);
+    setLinks((prev) => [...prev, { ...data, id: uuidv4() }]);
   };
 
   const updateLink = (id: string, data: Omit<Link, 'id'>) => {
-    setLinks(prev => prev.map(l => (l.id === id ? { ...data, id } : l)));
+    setLinks((prev) => prev.map((l) => (l.id === id ? { ...data, id } : l)));
   };
 
   const deleteLink = (id: string) => {
-    setLinks(prev => prev.filter(l => l.id !== id));
+    setLinks((prev) => prev.filter((l) => l.id !== id));
   };
 
-  const contextValue = useMemo(() => ({
-    isLocked,
-    isLoading,
-    isCryptoReady,
-    credentials,
-    messages,
-    links,
-    unlock,
-    lock,
-    addCredential,
-    updateCredential,
-    deleteCredential,
-    addMessage,
-    updateMessage,
-    deleteMessage,
-    addLink,
-    updateLink,
-    deleteLink
-  }), [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock, updateCredential, updateMessage, updateLink, deleteCredential, deleteMessage, deleteLink, addCredential, addMessage, addLink]);
+  const contextValue = useMemo(
+    () => ({
+      isLocked,
+      isLoading,
+      isCryptoReady,
+      credentials,
+      messages,
+      links,
+      unlock,
+      lock,
+      addCredential,
+      updateCredential,
+      deleteCredential,
+      addMessage,
+      updateMessage,
+      deleteMessage,
+      addLink,
+      updateLink,
+      deleteLink,
+    }),
+    [isLocked, isLoading, isCryptoReady, credentials, messages, links, unlock, lock]
+  );
 
   return (
-    <AppContext.Provider value={contextValue}>
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 }
